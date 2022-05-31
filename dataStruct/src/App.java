@@ -1,9 +1,12 @@
 import java.rmi.server.RMIClassLoader;
 import java.util.Scanner;
 
+import javax.swing.plaf.basic.BasicScrollPaneUI.ViewportChangeHandler;
+
 public class App {
     public static void Welcome() {
-        System.out.println("\t\t  || Welcome ||");
+        System.out.println("\t  || Welcome ||");
+        System.out.println("-----------------------------------------");
     }
 
     public static void PrintBoard(int x, int g) {
@@ -35,9 +38,7 @@ public class App {
     public static Boolean isAnElement(int [][]Alpha, int []prev) {
         boolean isFound = false;
         for (int x = 0; x <= Alpha.length-1; x++) {
-            for (int y = 0; y<=Alpha[x].length-1;y++) {
-                  if (Alpha[x][y] == prev[0] && Alpha[x][y+1] == prev[1]) isFound = true; 
-            }
+                if (Alpha[x][0] == prev[0] && Alpha[x][1] == prev[1]) isFound = true; 
           }
           return isFound;
     }
@@ -67,9 +68,9 @@ public class App {
     public static void Replace(int Alpha[][], int prev[], int next[]) {
         for (int x = 0; x <= Alpha.length-1; x++) {
             for (int y = 0; y<=Alpha[x].length-1;y++) {
-                  if (Alpha[x][y] == prev[0] && Alpha[x][y+1] == prev[1]) {
-                      Alpha[x][y] = next[0]; 
-                      Alpha[x][y+1] = next[1];
+                  if (Alpha[x][0] == prev[0] && Alpha[x][1] == prev[1]) {
+                      Alpha[x][0] = next[0]; 
+                      Alpha[x][1] = next[1];
                   }; 
             }
           }
@@ -94,14 +95,31 @@ public class App {
         }
         Copy(newAlpha,Alpha);
 
-
     }
 
+    public static void ViewPoints(int []prev) {
+        System.out.print("(");
+        for (int x = 0; x < prev.length; x++) {
+            if (x == 1) System.out.print(prev[x]);
+            else System.out.print(prev[x]+ ",");
+        }
+        System.out.println(")");
+    } 
 
+    public static void ViewSet(int [][]p) {
+        for (int x = 0; x <= p.length-1; x++) {
+            for (int y = 0; y <= 1; y++) {
+                System.out.print(p[x][y]);
+            }
+            System.out.println("\n");
+        }
+    }
     public static void NextPlayerMove(int []prev, int []next, boolean aTurn, int [][]Alpha, int [][]Beta, int [][]Free ,int [][]P, boolean ok, int [][]S, int [] cardinalities) {
 
         Scanner s = new Scanner(System.in);
-
+        if (!aTurn) System.out.println("Alpha's Turn!");
+        else System.out.println("Beta's Turn!");
+        System.out.println("Enter coordinates!");
         System.out.println("Which Piece would you like to move?");
         System.out.println("Enter point A: ");
         prev[0] = s.nextInt();
@@ -114,38 +132,44 @@ public class App {
         System.out.println("Enter point D:");
         next[1] = s.nextInt();
 
-        s.close();
 
-        if (isAnElement(Alpha, prev) && aTurn && prev[0] == (next[0]+ 1) && ((next[1] == prev[1]) ||(next[1] == prev[1] + 1) || prev[1] == (next[1] + 1))) ok = !ok; 
-        else if (isAnElement(Beta, prev) && aTurn && next[0] == (prev[0]+1) && ((next[1] == prev[1]) ||(next[1] == prev[1] + 1) || prev[1] == (next[1] + 1))) ok = !ok;
+
+        System.out.print("Points to be moved: ");
+        ViewPoints(prev);
+        System.out.print("To be moved at: ");
+        ViewPoints(next);
+
+        if (isAnElement(Alpha, prev) && aTurn && prev[0] == next[0]+1 && (next[1] == prev[1] && next[1] == prev[1] + 1 && prev[1] == next[1] + 1)) ok = !ok;
+        else if (isAnElement(Beta, prev) && !aTurn && next[0] == prev[0]+1 && (next[1] == prev[1] && next[1] == prev[1] + 1 && prev[1] == next[1] + 1)) ok = !ok;
+        else ok = true;
 
         if (ok && aTurn && isAnElement(Free, next)) {
-            //Remove prev from Alpha
             Replace(Alpha, prev, next);
-            aTurn = !aTurn;
+            aTurn = false;
             ok = !ok;
-            System.out.println("Shesh1");
-        }else if (ok && !aTurn && isAnElement(Free, next)) {
-            Replace(Beta, prev, next);
-            aTurn = !aTurn;
-            ok = !ok;
-            System.out.println("Shesh2");
         }
-        
-        if (ok && aTurn && isAnElement(Beta, next) && !isAnElement(S, prev)){
+        if (ok && !aTurn && isAnElement(Free, next)) {
+            Replace(Beta, prev, next);
+            aTurn = true;
+            ok = !ok;
+        }
+
+         if (ok && aTurn && isAnElement(Beta, next) && !isAnElement(S, prev)){
              ok = !ok;
              System.out.println("Shesh6");
-    }else if (ok && aTurn && isAnElement(Beta, next) && isAnElement(S, prev)) {
+        }else if (ok && aTurn && isAnElement(Beta, next) && isAnElement(S, prev)) {
             Delete(Beta, next);
             Replace(Alpha,prev,next);
             aTurn = !aTurn;
             ok = !ok;
             cardinalities[1]--;
             System.out.println("Shesh3");
-        }else if (ok && !aTurn && !isAnElement(Alpha, prev)) {
+        } 
+
+        if (ok && !aTurn && !isAnElement(Alpha, prev)) {
             ok = !ok;
             System.out.println("Shesh5");
-        }else if (ok && !aTurn && !isAnElement(Alpha, prev)) {
+        }else if (ok && !aTurn && isAnElement(Alpha, prev)) {
             Delete(Alpha, next);
             Replace(Beta,prev,next);
             aTurn = !aTurn;
@@ -171,11 +195,43 @@ public class App {
     }
 
     public static void ViewBoard(int A[][], int B[][], int [] cardinalities) {
-        for (int row = 0; row < 5; row++) {
-            for (int column = 0; column < 7 ; column++) {
-                System.out.print("*\t");
-            }
-            System.out.println();
+        int colmn = 0;
+        int access = 0, access2 = 0;
+        boolean is2nd = true;
+        int start = 0, start2 = 0;
+        System.out.println("\t0\t1\t2\t3\t4\t5");
+        for (int row = 0, x = 0; row <= 7; row++, x++) {
+            System.out.print(row + "\t");
+            for (int col = 0; col <= 5; col++) {
+                if (access < cardinalities[1] && access2 < cardinalities[0]) {
+                        if (access <= 4 && access2 <= 4) {
+                            if (row == B[access][colmn] && col == B[access][colmn+1] && access < 5) {
+                                System.out.print("B\t");
+                                access++;
+                            }else if (row == A[access2][colmn] && col == A[access2][colmn+1] && access2 < 5) {
+                                System.out.print("A\t");
+                                access2++;
+                            }else System.out.print(":)\t");
+                        }
+                }
+                else {
+                    // if (access2 <= 4) {
+                    //     if (row == A[access2][colmn] && col == A[access2][colmn+1] && access2 < 5) {
+                    //         if (!is2nd) {
+                    //             row = 0;
+                    //             col = 0;
+                    //             is2nd = true;
+                    //         }
+                    //         System.out.print("A\t");
+                    //         access2++;
+                    //     }else System.out.print(";)\t");
+                    // }
+
+                }
+                
+            }        
+
+        System.out.println();
         }
     }
 
@@ -229,19 +285,18 @@ public class App {
         boolean aTurn = true;
         int []move = new int[2];
         int []pieceToMove = new int[2];
-        move[0] = 6;
-        move[1] = 2;
-        pieceToMove[0] = 2;
-        pieceToMove[1] = 3;
         
-        // Replace(Alpha, move, pieceToMove);
-        // Delete(Alpha, move);
-        // for (int x = 0; x < cardinalities[0]; x++) {
-        //     for (int y = 0; y<2;y++) {
-        //         System.out.print(Alpha[x][y] + " ");
-        //     }
-        //     System.out.println();
-        // }
+        Welcome();
+        while (true) {
+            // ViewBoard(Alpha, Beta, cardinalities);
+            System.out.println("Set Alpha: ");
+            ViewSet(Alpha);
+            System.out.println("Set Beta: ");
+            ViewSet(Beta);
+            NextPlayerMove(move, pieceToMove, aTurn, Alpha, Beta, Free, P, ok, S, cardinalities);
+        }
+        
+
         
 
         
