@@ -1,21 +1,12 @@
-import java.rmi.server.RMIClassLoader;
 import java.util.Scanner;
 
-import javax.swing.plaf.basic.BasicScrollPaneUI.ViewportChangeHandler;
+import javax.swing.text.View;
+
 
 public class App {
     public static void Welcome() {
         System.out.println("\t  || Welcome ||");
         System.out.println("-----------------------------------------");
-    }
-
-    public static void PrintBoard(int x, int g) {
-        for (int y = 0; y <= g;y++) {
-            for (int k = 0; k <= x; k++) {
-                System.out.print("*\t");
-            }
-            System.out.println();
-        }
     }
 
     public static void SetUnion(int x[][], int y[][], int z[][]) {
@@ -58,7 +49,6 @@ public class App {
             }
         }
     }
- 
 
     public static void DifferenceOfSets(int [][]Alpha, int [][]prev, int [][]next) {
         // A −B = {x |x ∈A ∧x 6∈B }
@@ -194,48 +184,77 @@ public class App {
         System.out.println(prev[0] + " " + prev[1]);
     }
 
-    public static void ViewBoard(int A[][], int B[][], int [] cardinalities) {
-        int colmn = 0;
-        int access = 0, access2 = 0;
-        boolean is2nd = true;
-        int start = 0, start2 = 0;
-        System.out.println("\t0\t1\t2\t3\t4\t5");
-        for (int row = 0, x = 0; row <= 7; row++, x++) {
-            System.out.print(row + "\t");
-            for (int col = 0; col <= 5; col++) {
-                if (access < cardinalities[1] && access2 < cardinalities[0]) {
-                        if (access <= 4 && access2 <= 4) {
-                            if (row == B[access][colmn] && col == B[access][colmn+1] && access < 5) {
-                                System.out.print("B\t");
-                                access++;
-                            }else if (row == A[access2][colmn] && col == A[access2][colmn+1] && access2 < 5) {
-                                System.out.print("A\t");
-                                access2++;
-                            }else System.out.print(":)\t");
-                        }
+    public static boolean Checker(int [][]P, int [][]Union, int check) {
+        int checker = 0;
+        boolean go = false;
+        while (true && checker < 35) {
+            try {
+                if (P[checker][0] == Union[check][0]) {
+                    if (P[checker][1] == Union[check][1]) {
+                        go = true;
+                        // System.out.println("P = {" + P[checker][0] + "," + P[checker][1] +"}" + "," + "U = {" + Union[check][0] + "," + Union[check][1] + "}");
+                        checker = 0;
+                        break;
+                    }
                 }
-                else {
-                    // if (access2 <= 4) {
-                    //     if (row == A[access2][colmn] && col == A[access2][colmn+1] && access2 < 5) {
-                    //         if (!is2nd) {
-                    //             row = 0;
-                    //             col = 0;
-                    //             is2nd = true;
-                    //         }
-                    //         System.out.print("A\t");
-                    //         access2++;
-                    //     }else System.out.print(";)\t");
-                    // }
-
+            }catch (Exception e) {
+                if (P[checker][0] == Union[9][0]) {
+                    if (P[checker][1] == Union[9][1]) {
+                        go = true;
+                        // System.out.println("P = {" + P[checker][0] + "," + P[checker][1] +"}" + "," + "U = {" + Union[9][0] + "," + Union[9][1] + "}");
+                        checker = 0;
+                        break;
+                    }
                 }
-                
-            }        
-
-        System.out.println();
+            }
+            if (check >= 10) break;
+            checker++;
         }
+        return go;
+    }
+
+    public static boolean CheckerV2(int [][]P, int [][]Union, int check, int row) {
+        boolean isFound = false;
+        if (P[row][0] == Union[check][0]) {
+            if (P[row][1] == Union[check][1]){
+                isFound = true;
+            }
+        }
+        return isFound;
     }
 
 
+    public static void ViewBoard(int A[][], int B[][], int [] cardinalities, int P[][]) {
+        int [][]Union = new int[cardinalities[0] + cardinalities[1]][2];
+        int check = 0;
+        int alphaCounter = 0, betaCounter = 0; 
+        
+
+        SetUnion(B, A, Union);
+
+        for (int row = 0,newLine = 0; row < 35; row++, newLine++) {
+            // System.out.println("{"+P[row][0] + "," + P[row][1] + "}");
+            if (newLine == 5) {
+                System.out.println();
+                newLine = 0;
+            }
+            if (CheckerV2(P, Union, check, row)) {
+                if (betaCounter < cardinalities[1]) System.out.print("B\t");
+                else System.out.print("A\t");
+                check++;
+                betaCounter++;
+            }else System.out.print("*\t");
+            if (check >= 10) check = 9;
+            
+        }
+        System.out.println();
+    
+
+    }
+
+    public static void GameOver(){
+        
+    }
     public static void main(String[] args) throws Exception {
         int []cardinalities = {5,5};
         int R = 7; // Dynamic array
@@ -285,16 +304,25 @@ public class App {
         boolean aTurn = true;
         int []move = new int[2];
         int []pieceToMove = new int[2];
+        move[0] = 5;
+        move[1] = 2; 
+
+        pieceToMove[0] = 6;
+        pieceToMove[1] = 2;
         
         Welcome();
-        while (true) {
-            // ViewBoard(Alpha, Beta, cardinalities);
-            System.out.println("Set Alpha: ");
-            ViewSet(Alpha);
-            System.out.println("Set Beta: ");
-            ViewSet(Beta);
-            NextPlayerMove(move, pieceToMove, aTurn, Alpha, Beta, Free, P, ok, S, cardinalities);
-        }
+        ViewBoard(Alpha, Beta, cardinalities, P);
+        Replace(Alpha, pieceToMove, move); // Kaya iba output dahil dito dito oo tignan mo ung FindplayerNextMove sa taas dun gaganapin lahat
+        System.out.println();
+        ViewSet(Alpha);// bat wala inaask sa user pag nirun ko? di pa ba na iimplement yung user inp
+    
+        ViewBoard(Alpha, Beta, cardinalities, P);
+        
+        // Checker(Alpha,P);
+        // while (true) {
+        //     ViewBoard(Alpha, Beta, cardinalities);
+        //     NextPlayerMove(move, pieceToMove, aTurn, Alpha, Beta, Free, P, ok, S, cardinalities);
+        // }
         
 
         
